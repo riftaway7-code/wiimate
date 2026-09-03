@@ -9,26 +9,37 @@ def detect_wii_drives() -> List[Tuple[str, str, str]]:
 
 	try:
 		result = subprocess.run(
-			["wmic", "logicaldisk", "get", "name,description,filesystem"],
+			["powershell", "-Command", 
+			 "Get-Volume | Where-Object {$_.DriveType -eq 'Removable'} | Select-Object -ExpandProperty DriveLetter"],
 			capture_output=True, text=True, timeout=5
 		)
-		lines = result.stdout.strip().split("\n")[1:]
-
-		for line in lines:
-			parts = line.split()
-			if len(parts) >= 2:
-				drive_letter = parts[0].rstrip(":")
-				if drive_letter and os.path.exists(f"{drive_letter}:\\"):
-					drives.append((f"{drive_letter}:", "usb", "Detected USB Drive"))
+		for line in result.stdout.strip().split("\n"):
+			drive_letter = line.strip()
+			if drive_letter and len(drive_letter) == 1:
+				path = f"{drive_letter}:\\"
+				if os.path.exists(path):
+					drives.append((path, "usb", f"Removable USB Drive {drive_letter}:"))
 	except Exception:
 		pass
 
 	if not drives:
 		try:
-			for drive_letter in "CDEFGHIJKLMNOPQRSTUVWXYZ":
-				path = f"{drive_letter}:\\"
-				if os.path.exists(path):
-					drives.append((path, "usb", f"Drive {drive_letter}:"))
+			result = subprocess.run(
+				["wmic", "logicaldisk", "get", "name"],
+				capture_output=True, text=True, timeout=5
+			)
+			for line in result.stdout.strip().split("\n")[1:]:
+				line = line.strip()
+				if line and line[-1] == ":":
+					path = line + "\\"
+					if os.path.exists(path):
+						size_result = subprocess.run(
+							["powershell", "-Command",
+							 f"(Get-Volume -DriveLetter {line[0]}).DriveType"],
+							capture_output=True, text=True, timeout=2
+						)
+						if "Removable" in size_result.stdout:
+							drives.append((path, "usb", f"USB Drive {line}"))
 		except Exception:
 			pass
 
