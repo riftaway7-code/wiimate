@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+	<name>Homebrew Launcher</name>
+	<coder>Authors</coder>
+	<version>1.1.0</version>
+	<release_date>230101120000</release_date>
+	<short_description>Loads homebrew apps</short_description>
+	<long_description>A tool to launch homebrew applications</long_description>
+</app>
